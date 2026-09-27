@@ -10,7 +10,26 @@ let currentVoter = null;
 let candidatesByPosition = {};
 let adminToken = sessionStorage.getItem('adminToken') || null;
 
-// Sounds — Web Audio, no files, toggle persisted
+// Sidebar — hamburger collapsible
+const hamburger = document.getElementById('hamburger');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebar-overlay');
+function setSidebar(open) {
+  if (!sidebar || !hamburger || !overlay) return;
+  sidebar.classList.toggle('open', open);
+  overlay.classList.toggle('hidden', !open);
+  hamburger.setAttribute('aria-expanded', String(open));
+  sidebar.setAttribute('aria-hidden', String(!open));
+  overlay.setAttribute('aria-hidden', String(!open));
+  document.body.classList.toggle('sidebar-open', open);
+}
+function toggleSidebar() { setSidebar(!sidebar.classList.contains('open')); }
+function closeSidebar() { setSidebar(false); }
+hamburger?.addEventListener('click', toggleSidebar);
+overlay?.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
+
+// Sounds — Web Audio, toggle persisted
 let soundOn = (localStorage.getItem('soundOn') ?? '1') === '1';
 function setSoundUI() {
   const b = document.getElementById('sound-toggle');
@@ -55,7 +74,7 @@ function play(kind) {
   else if (kind === 'submit') { tone(300, 0.10, 'square', 0.09); setTimeout(()=>tone(600,0.20,'sine',0.12),100); }
 }
 
-function navTo(view) { play('nav'); showView(view); }
+function navTo(view) { closeSidebar(); play('nav'); showView(view); }
 
 function groupCandidates(candidates) {
   const map = {};
@@ -153,9 +172,6 @@ async function loadRegistrations() {
   const regs = data.registrations || [];
   const pending = regs.filter(r => r.Status === 'pending').length;
   if (pending > 0) { countEl.textContent = String(pending); countEl.classList.remove('hidden'); } else countEl.classList.add('hidden');
-  const fraudCountEl = document.getElementById('fraud-count');
-  const contactCountEl = document.getElementById('contact-count');
-  // refresh badge counts for other tabs lazily elsewhere
   if (regs.length === 0) { list.innerHTML = `<p class="muted">No registrations yet.</p>`; return; }
   list.innerHTML = '';
   for (const r of regs) {
@@ -241,7 +257,7 @@ function showAdminTab(which) {
   else if (which==='contacts') loadContacts();
 }
 
-// Top nav
+// Nav — close sidebar on every navigation
 document.getElementById('nav-home')?.addEventListener('click', () => navTo('view-landing'));
 document.getElementById('nav-guide')?.addEventListener('click', () => navTo('view-onboarding'));
 document.getElementById('nav-register')?.addEventListener('click', () => navTo('view-register'));
@@ -272,12 +288,12 @@ document.querySelectorAll('[data-go]').forEach(el => {
 
 // Admin nav
 document.getElementById('btn-admin-nav')?.addEventListener('click', () => {
-  play('nav');
+  closeSidebar(); play('nav');
   if (adminToken) { showView('view-admin'); showAdminTab('results'); }
   else showView('view-admin-login');
 });
 document.getElementById('footer-admin-link')?.addEventListener('click', (e) => {
-  e.preventDefault(); play('nav');
+  e.preventDefault(); closeSidebar(); play('nav');
   if (adminToken) { showView('view-admin'); showAdminTab('results'); }
   else showView('view-admin-login');
 });
