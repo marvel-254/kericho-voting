@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kericho Primary — Online Voting</title>
+  <link rel="stylesheet" href="/public/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="crest">KP</div>
+      <div>
+        <h1>Kericho Primary School</h1>
+        <p>Online Voting Management System · Pupil Leadership Elections</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="btn-admin-nav" class="btn ghost">Admin</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Pupil Login -->
+    <section id="view-login" class="card">
+      <h2>Pupil Login</h2>
+      <p class="muted">Enter your admission number and PIN to access your ballot. One vote per pupil.</p>
+      <form id="form-login" class="stack">
+        <label>Admission Number
+          <input id="login-adm" type="text" placeholder="e.g. KP001" autocomplete="off" required />
+        </label>
+        <label>PIN
+          <input id="login-pin" type="password" placeholder="••••" required />
+        </label>
+        <button type="submit" class="btn primary">Continue to Ballot →</button>
+        <p id="login-error" class="error hidden"></p>
+      </form>
+      <details class="hint">
+        <summary>Demo accounts</summary>
+        <p class="muted">All demo pupils: PIN <code>1234</code>. Admissions <code>KP001</code>–<code>KP010</code>. Admin: <code>admin / admin123</code></p>
+      </details>
+    </section>
+
+    <!-- Ballot -->
+    <section id="view-ballot" class="card hidden">
+      <div class="section-head">
+        <h2>Ballot</h2>
+        <span id="ballot-user" class="badge"></span>
+      </div>
+      <p class="muted">Choose <strong>exactly one</strong> candidate per position, then submit. You cannot change your vote after submitting.</p>
+      <form id="form-ballot" class="stack">
+        <div id="ballot-positions"></div>
+        <button type="submit" class="btn primary">Submit My Vote ✓</button>
+        <p id="ballot-error" class="error hidden"></p>
+      </form>
+    </section>
+
+    <!-- Success -->
+    <section id="view-done" class="card hidden">
+      <h2>✓ Vote Recorded</h2>
+      <p>Thank you — your vote has been securely recorded. You cannot vote again.</p>
+      <button id="btn-back-home" class="btn">Back to Home</button>
+    </section>
+
+    <!-- Admin Login -->
+    <section id="view-admin-login" class="card hidden">
+      <h2>Admin Login</h2>
+      <form id="form-admin-login" class="stack">
+        <label>Username
+          <input id="admin-user" type="text" placeholder="admin" required />
+        </label>
+        <label>Password
+          <input id="admin-pass" type="password" placeholder="••••••••" required />
+        </label>
+        <button type="submit" class="btn primary">Open Dashboard →</button>
+        <p id="admin-error" class="error hidden"></p>
+      </form>
+      <button id="btn-admin-back" class="btn ghost">← Back to Pupil Login</button>
+    </section>
+
+    <!-- Admin Dashboard -->
+    <section id="view-admin" class="hidden">
+      <div class="card">
+        <div class="section-head">
+          <h2>Admin Dashboard — Live Results</h2>
+          <div class="row">
+            <button id="btn-refresh" class="btn ghost">Refresh</button>
+            <button id="btn-reset" class="btn danger">Reset Election</button>
+            <button id="btn-admin-logout" class="btn">Log out</button>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><span class="kpi-label">Turnout</span><span id="kpi-turnout" class="kpi-value">—</span></div>
+          <div class="kpi"><span class="kpi-label">Voted</span><span id="kpi-voted" class="kpi-value">—</span></div>
+          <div class="kpi"><span class="kpi-label">Registered</span><span id="kpi-total" class="kpi-value">—</span></div>
+        </div>
+        <div id="results"></div>
+        <p id="admin-msg" class="muted"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Kericho Primary · School of Computing & Information Science — built with Node.js + SQLite · <a href="#" id="footer-admin-link">Admin</a></p>
+  </footer>
+
+  <script src="/public/app.js" type="module"></script>
+</body>
+</html>

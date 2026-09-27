@@ -1,0 +1,13 @@
+{
+  "name": "kericho-voting",
+  "version": "1.0.0",
+  "description": "Kericho Primary Online Voting Management System — browser-based pupil election voting with admin dashboard",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "smoke": "node test/smoke.mjs"
+  }
+}

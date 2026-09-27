@@ -1,0 +1,76 @@
+:root{
+  --bg:#f4f6f0;
+  --card:#ffffff;
+  --ink:#1a2a1a;
+  --muted:#6b7a6b;
+  --green:#1b7a2b;
+  --green-dark:#13561e;
+  --green-light:#e6f4e8;
+  --gold:#c9a227;
+  --line:#dfe6df;
+  --danger:#b42318;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
+a{color:var(--green)}
+.topbar{
+  background:linear-gradient(135deg,#0f3d14 0%,#1b7a2b 55%,#2a9d3a 100%);
+  color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  position:sticky; top:0; z-index:10; box-shadow:0 2px 14px rgba(0,0,0,.18)
+}
+.brand{display:flex; gap:12px; align-items:center}
+.crest{
+  width:44px;height:44px;border-radius:10px; display:grid; place-items:center;
+  background:#fff; color:#1b7a2b; font-weight:800; letter-spacing:.5px; border:2px solid rgba(255,255,255,.9)
+}
+.brand h1{margin:0;font-size:1.05rem; letter-spacing:.2px}
+.brand p{margin:2px 0 0; opacity:.92; font-size:.82rem}
+.container{max-width:860px; margin:22px auto; padding:0 14px}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; box-shadow:0 6px 22px rgba(27,122,43,.08); margin-bottom:16px
+}
+.card h2{margin:0 0 8px; font-size:1.15rem}
+.muted{color:var(--muted); font-size:.92rem}
+.stack{display:flex; flex-direction:column; gap:12px; margin-top:10px}
+label{font-weight:600; font-size:.92rem; display:flex; flex-direction:column; gap:6px}
+input{
+  width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font-size:1rem;
+  outline:none; background:#fff;
+}
+input:focus{border-color:var(--green); box-shadow:0 0 0 3px var(--green-light)}
+.btn{
+  appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink);
+  padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer;
+}
+.btn:hover{filter:brightness(.98)}
+.btn.primary{background:var(--green); color:#fff; border-color:var(--green-dark)}
+.btn.primary:hover{background:var(--green-dark)}
+.btn.ghost{background:rgba(255,255,255,.14); color:#fff; border-color:rgba(255,255,255,.35)}
+.btn.danger{background:var(--danger); color:#fff; border-color:#7a1410}
+.badge{background:var(--green-light); color:var(--green-dark); padding:6px 10px; border-radius:999px; font-weight:700; font-size:.85rem; border:1px solid #cfe8d2}
+.section-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.row{display:flex; gap:8px; flex-wrap:wrap}
+.error{color:var(--danger); font-weight:700; background:#fdecea; border:1px solid #f5c6c1; padding:8px 10px; border-radius:10px}
+.hidden{display:none !important}
+.kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:12px 0}
+.kpi{background:var(--green-light); border:1px solid #cfe8d2; border-radius:12px; padding:12px; text-align:center}
+.kpi-label{display:block; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.6px}
+.kpi-value{display:block; font-size:1.35rem; font-weight:800; color:var(--green-dark)}
+.position{border:1px solid var(--line); border-radius:12px; padding:12px; margin:10px 0; background:#fbfdfb}
+.position h3{margin:0 0 8px; font-size:1rem; color:var(--green-dark)}
+.candidate{display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; border:1px solid transparent}
+.candidate:has(input:checked){background:var(--green-light); border-color:#cfe8d2}
+.candidate input{width:auto}
+.result-row{display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line)}
+.result-row:last-child{border-bottom:none}
+.bar{height:8px; background:#e9efe9; border-radius:999px; overflow:hidden; margin-top:6px}
+.bar > span{display:block; height:100%; background:linear-gradient(90deg,var(--green),#2a9d3a)}
+.hint{margin-top:10px}
+.hint summary{cursor:pointer; color:var(--muted)}
+.footer{max-width:860px; margin:14px auto 30px; padding:0 14px; color:var(--muted); font-size:.85rem; text-align:center}
+@media (max-width:600px){
+  .kpis{grid-template-columns:1fr}
+  .brand p{display:none}
+}
