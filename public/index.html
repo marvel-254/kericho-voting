@@ -3,7 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kericho Primary — Online Voting</title>
+  <meta name="description" content="Kericho Primary Online Voting — Your vote. Your voice. Your school. Secure one-vote-per-pupil election for five leadership positions." />
+  <meta name="theme-color" content="#1b7a2b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta property="og:title" content="Kericho Primary — Online Voting" />
+  <meta property="og:description" content="Your vote. Your voice. Your school. Register, get approved, and vote for Head Boy, Head Girl, Assistant Heads & Games Captain — one vote per pupil." />
+  <meta property="og:image" content="/public/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://kericho-voting.onrender.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Kericho Primary Voting" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Kericho Primary — Online Voting" />
+  <meta name="twitter:description" content="Register, get approved, and cast one ballot for five leadership positions. Secure, fair and verifiable." />
+  <meta name="twitter:image" content="/public/og-image.png" />
+  <link rel="icon" href="/public/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16.png" />
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png" />
+  <link rel="manifest" href="/public/manifest.json" />
   <link rel="stylesheet" href="/public/style.css" />
 </head>
 <body>
@@ -31,6 +51,18 @@
       <button id="sound-toggle" class="btn ghost sm" title="Toggle sounds">🔊</button>
     </div>
   </header>
+  <div id="install-banner" class="install-banner hidden" role="dialog" aria-label="Install app">
+    <div class="install-banner-inner">
+      <div class="install-banner-copy">
+        <strong>Install Kericho Voting</strong>
+        <span>Add to your home screen for a full-screen, offline-ready ballot.</span>
+      </div>
+      <div class="row">
+        <button id="install-accept" class="btn primary sm">Install</button>
+        <button id="install-dismiss" class="btn ghost dark sm">Not now</button>
+      </div>
+    </div>
+  </div>
 
   <div id="sidebar-overlay" class="sidebar-overlay hidden" aria-hidden="true"></div>
   <aside id="sidebar" aria-label="Site menu" aria-hidden="true">
@@ -369,15 +401,20 @@
       </div>
     </section>
 
-    <!-- Success -->
+    <!-- Success — personalized rewards + confetti -->
     <section id="view-done" class="card hidden">
-      <div style="text-align:center; padding:8px 0">
-        <div style="width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:1.6rem;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)">✓</div>
-        <h2>Vote recorded</h2>
-        <p class="muted">Thank you — your vote has been securely recorded. You cannot vote again.</p>
-        <div class="row" style="justify-content:center; margin-top:12px">
-          <button id="btn-back-home" class="btn ghost dark">Back to Home</button>
+      <canvas id="confetti" width="800" height="400" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:16px;" aria-hidden="true"></canvas>
+      <div style="text-align:center; padding:10px 0; position:relative">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:1.8rem;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink)">✓</div>
+        <div id="reward-badge" class="badge" style="display:inline-flex; gap:6px; margin-bottom:8px">🏅 Civic Champion · 100 pts</div>
+        <h2 id="reward-title">Hongera! Vote recorded 🎉</h2>
+        <p id="reward-message" class="muted" style="max-width:56ch; margin:8px auto 0">Your vote is in — thank you for shaping Kericho Primary. One vote, one voice, one proud community.</p>
+        <p id="reward-tagline" class="muted small" style="margin-top:6px; font-weight:800; color:var(--green-dark)"></p>
+        <div class="row" style="justify-content:center; margin-top:14px">
+          <button id="btn-back-home" class="btn primary">Back to Home</button>
+          <button id="btn-share" class="btn ghost dark">Share</button>
         </div>
+        <p class="muted small" style="margin-top:8px">You cannot vote again — this protects fairness for everyone.</p>
       </div>
     </section>
 
@@ -408,6 +445,7 @@
         <div class="tabs">
           <button id="tab-results" class="tab active">Live Results</button>
           <button id="tab-registrations" class="tab">Registrations <span id="reg-count" class="tab-count hidden">0</span></button>
+          <button id="tab-positions" class="tab">Positions</button>
           <button id="tab-fraud" class="tab">Fraud Reports <span id="fraud-count" class="tab-count hidden">0</span></button>
           <button id="tab-contacts" class="tab">Messages <span id="contact-count" class="tab-count hidden">0</span></button>
           <button id="tab-guide" class="tab">System Guide</button>
@@ -436,6 +474,19 @@
           <p class="muted">Approve to grant login/voting access. Reject to let the pupil re-apply.</p>
           <div id="registrations-list"></div>
           <p id="registrations-msg" class="muted"></p>
+        </div>
+
+        <div id="admin-panel-positions" class="hidden">
+          <div class="section-head" style="margin-top:6px">
+            <h3 style="margin:0">Positions</h3>
+            <span class="muted small">Add or remove election positions. Removing deletes its candidates & votes.</span>
+          </div>
+          <form id="form-add-position" class="row" style="margin-top:10px">
+            <input id="new-position-name" type="text" placeholder="e.g. Library Captain" required maxlength="60" style="flex:1; min-width:220px" />
+            <button type="submit" class="btn primary sm">Add Position</button>
+          </form>
+          <p id="positions-msg" class="muted small"></p>
+          <div id="positions-list" style="margin-top:8px"></div>
         </div>
 
         <div id="admin-panel-fraud" class="hidden">

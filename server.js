@@ -20,6 +20,14 @@ function isAdminAuthorized(req) {
 
 const db = new DatabaseSync(DB_PATH);
 
+const DEFAULT_POSITIONS = [
+  'School Captain (Head Boy)',
+  'School Captain (Head Girl)',
+  'Assistant Head Boy',
+  'Assistant Head Girl',
+  'Games Captain',
+];
+
 function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS voters (
@@ -39,6 +47,11 @@ function initSchema() {
       CandidateID INTEGER PRIMARY KEY,
       VoteCount INTEGER DEFAULT 0,
       FOREIGN KEY (CandidateID) REFERENCES candidates(CandidateID)
+    );
+    CREATE TABLE IF NOT EXISTS positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      createdAt TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS voter_registrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,6 +82,20 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_voters_class ON voters(Class);
     CREATE INDEX IF NOT EXISTS idx_registrations_status ON voter_registrations(Status);
   `);
+}
+
+function seedPositionsIfEmpty() {
+  const count = db.prepare('SELECT COUNT(*) as c FROM positions').get().c;
+  if (count > 0) return;
+  const existing = db.prepare('SELECT DISTINCT Position as name FROM candidates').all().map(r => r.name).filter(Boolean);
+  const source = existing.length ? existing : DEFAULT_POSITIONS;
+  const ins = db.prepare('INSERT OR IGNORE INTO positions (name) VALUES (?)');
+  for (const n of source) ins.run(n);
+  // if still empty (fresh DB with no candidates yet), seed defaults
+  const after = db.prepare('SELECT COUNT(*) as c FROM positions').get().c;
+  if (after === 0) {
+    for (const n of DEFAULT_POSITIONS) ins.run(n);
+  }
 }
 
 function seedIfEmpty() {
@@ -122,6 +149,31 @@ function seedIfEmpty() {
   }
 }
 
+function getPositions() {
+  return db.prepare('SELECT id, name FROM positions ORDER BY id').all();
+}
+
+function getPositionNames() {
+  return getPositions().map(r => r.name);
+}
+
+function makeReward(name) {
+  const first = String(name).trim().split(/\s+/)[0] || 'Champion';
+  const rewards = [
+    { title: 'Civic Champion', badge: '🏅', points: 100, tagline: 'Voice of the School' },
+    { title: 'Democracy Star', badge: '⭐', points: 100, tagline: 'Future Leader' },
+    { title: 'Kericho Voice', badge: '🗳️', points: 100, tagline: 'Your Vote Counts' },
+    { title: 'Unity Builder', badge: '🤝', points: 100, tagline: 'Together We Decide' },
+  ];
+  const pick = rewards[Math.floor(Math.random() * rewards.length)];
+  // personalize
+  return {
+    ...pick,
+    message: `Hongera, ${first}! 🎉 Your vote is in — thank you for shaping Kericho Primary. You've earned the ${pick.title} ${pick.badge} — ${pick.points} points for showing up for your school. One vote, one voice, one proud community!`,
+    voterName: name,
+  };
+}
+
 function hashPin(pin) {
   return createHash('sha256').update(pin).digest('hex');
 }
@@ -142,10 +194,18 @@ function serveStatic(res, filepath) {
       '.json': 'application/json; charset=utf-8',
       '.svg': 'image/svg+xml',
       '.ico': 'image/x-icon',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.webp': 'image/webp',
       '.wav': 'audio/wav',
       '.mp3': 'audio/mpeg',
+      '.webmanifest': 'application/manifest+json',
     };
-    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+    // PWA: set correct manifest content type if path ends with manifest.json
+    let ct = types[ext] || 'application/octet-stream';
+    if (filepath.endsWith('manifest.json') || filepath.endsWith('manifest.webmanifest')) ct = 'application/manifest+json';
+    res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=300' });
     res.end(content);
   } catch (e) {
     res.writeHead(404);
@@ -161,7 +221,8 @@ const loginPupil = (body) => {
   if (voter.PINHash !== hashPin(pin)) return { ok: false, error: 'Invalid admission number or PIN' };
   if (voter.HasVoted) return { ok: false, error: 'You have already voted' };
   const candidates = db.prepare('SELECT CandidateID, Position, Name, Class FROM candidates ORDER BY Position, Name').all();
-  return { ok: true, voter: { AdmissionNumber: voter.AdmissionNumber, Name: voter.Name, Class: voter.Class }, candidates };
+  const positions = getPositionNames();
+  return { ok: true, voter: { AdmissionNumber: voter.AdmissionNumber, Name: voter.Name, Class: voter.Class }, candidates, positions };
 };
 
 const submitVote = (body) => {
@@ -170,9 +231,14 @@ const submitVote = (body) => {
   const voter = db.prepare('SELECT * FROM voters WHERE AdmissionNumber = ?').get(admissionNumber);
   if (!voter) return { ok: false, error: 'Invalid voter' };
   if (voter.HasVoted) return { ok: false, error: 'Already voted' };
-  const positions = ['School Captain (Head Boy)', 'School Captain (Head Girl)', 'Assistant Head Boy', 'Assistant Head Girl', 'Games Captain'];
+  const positions = getPositionNames();
+  if (positions.length === 0) return { ok: false, error: 'No positions configured — contact admin' };
   for (const pos of positions) {
     if (!selections[pos]) return { ok: false, error: `Missing selection for ${pos}` };
+  }
+  // reject extra positions not in list
+  for (const k of Object.keys(selections)) {
+    if (!positions.includes(k)) return { ok: false, error: `Unknown position: ${k}` };
   }
   const candidateIds = Object.values(selections);
   const placeholders = candidateIds.map(() => '?').join(',');
@@ -194,7 +260,8 @@ const submitVote = (body) => {
     try { db.exec('ROLLBACK'); } catch {}
     throw e;
   }
-  return { ok: true };
+  const reward = makeReward(voter.Name);
+  return { ok: true, reward };
 };
 
 const adminLogin = (body) => {
@@ -221,13 +288,17 @@ const getResults = () => {
     if (!byPosition[r.Position]) byPosition[r.Position] = [];
     byPosition[r.Position].push({ candidateId: r.CandidateID, name: r.Name, class: r.Class, votes: r.VoteCount });
   }
+  // ensure every position appears even if no candidates
+  for (const pos of getPositionNames()) {
+    if (!byPosition[pos]) byPosition[pos] = [];
+  }
   for (const pos of Object.keys(byPosition)) {
     const total = byPosition[pos].reduce((s, c) => s + c.votes, 0);
     for (const c of byPosition[pos]) {
       c.percent = total > 0 ? Math.round((c.votes / total) * 100) : 0;
     }
   }
-  return { ok: true, byPosition, turnout, totalVoters, votedCount };
+  return { ok: true, byPosition, turnout, totalVoters, votedCount, positions: getPositions() };
 };
 
 const resetElection = () => {
@@ -343,12 +414,74 @@ const listContacts = () => {
   return { ok: true, messages: rows };
 };
 
+const listPositions = () => {
+  return { ok: true, positions: getPositions() };
+};
+
+const addPosition = (body) => {
+  const name = body?.name ? String(body.name).trim() : '';
+  if (!name) return { ok: false, error: 'Position name required' };
+  if (name.length < 3 || name.length > 60) return { ok: false, error: 'Position name must be 3–60 characters' };
+  if (getPositionNames().some(p => p.toLowerCase() === name.toLowerCase())) return { ok: false, error: 'Position already exists' };
+  try {
+    const info = db.prepare('INSERT INTO positions (name) VALUES (?)').run(name);
+    return { ok: true, position: { id: info.lastInsertRowid, name } };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+};
+
+const removePosition = (id) => {
+  const pos = db.prepare('SELECT * FROM positions WHERE id = ?').get(id);
+  if (!pos) return { ok: false, error: 'Position not found' };
+  // prevent deleting last position? allow but warn — keep at least 1
+  const count = db.prepare('SELECT COUNT(*) as c FROM positions').get().c;
+  if (count <= 1) return { ok: false, error: 'Cannot remove the last position' };
+  const candidates = db.prepare('SELECT CandidateID FROM candidates WHERE Position = ?').all(pos.name);
+  db.exec('BEGIN');
+  try {
+    for (const c of candidates) {
+      db.prepare('DELETE FROM votes WHERE CandidateID = ?').run(c.CandidateID);
+    }
+    db.prepare('DELETE FROM candidates WHERE Position = ?').run(pos.name);
+    db.prepare('DELETE FROM positions WHERE id = ?').run(id);
+    db.exec('COMMIT');
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch {}
+    return { ok: false, error: e.message };
+  }
+  return { ok: true };
+};
+
 initSchema();
 seedIfEmpty();
+seedPositionsIfEmpty();
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = url.pathname;
+
+  if (req.method === 'GET' && pathname === '/api/positions') {
+    sendJSON(res, 200, listPositions());
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/admin/positions') {
+    if (!isAdminAuthorized(req)) { sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' }); return; }
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try { sendJSON(res, 200, addPosition(JSON.parse(body))); } catch { sendJSON(res, 400, { ok: false, error: 'Invalid JSON' }); }
+    });
+    return;
+  }
+
+  if (req.method === 'DELETE' && pathname.match(/^\/api\/admin\/positions\/\d+$/)) {
+    if (!isAdminAuthorized(req)) { sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' }); return; }
+    const id = Number(pathname.split('/').pop());
+    sendJSON(res, 200, removePosition(id));
+    return;
+  }
 
   if (req.method === 'POST' && pathname === '/api/login') {
     let body = '';
@@ -371,8 +504,8 @@ const server = http.createServer((req, res) => {
       try {
         const data = JSON.parse(body);
         sendJSON(res, 200, submitVote(data));
-      } catch {
-        sendJSON(res, 400, { ok: false, error: 'Invalid JSON' });
+      } catch (e) {
+        sendJSON(res, 500, { ok: false, error: e.message });
       }
     });
     return;
@@ -508,6 +641,16 @@ const server = http.createServer((req, res) => {
 
   if (pathname.startsWith('/public/')) {
     serveStatic(res, join(process.cwd(), pathname.slice(1)));
+    return;
+  }
+
+  if (pathname === '/manifest.json' || pathname === '/manifest.webmanifest') {
+    serveStatic(res, join(process.cwd(), 'public', 'manifest.json'));
+    return;
+  }
+
+  if (pathname === '/sw.js') {
+    serveStatic(res, join(process.cwd(), 'public', 'sw.js'));
     return;
   }
 

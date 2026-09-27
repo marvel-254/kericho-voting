@@ -74,6 +74,58 @@ function play(kind) {
   else if (kind === 'submit') { tone(300, 0.10, 'square', 0.09); setTimeout(()=>tone(600,0.20,'sine',0.12),100); }
 }
 
+
+// Confetti — canvas burst on success
+function fireConfetti() {
+  const canvas = document.getElementById('confetti');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  canvas.width = W * (window.devicePixelRatio || 1);
+  canvas.height = H * (window.devicePixelRatio || 1);
+  ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  const colors = ['#1b7a2b','#2a9a3a','#c9a227','#e8c24a','#0f2f12','#fff'];
+  const pieces = [];
+  const count = 90;
+  for (let i=0;i<count;i++) {
+    pieces.push({
+      x: Math.random()*W,
+      y: -20 - Math.random()*40,
+      r: 6 + Math.random()*6,
+      col: colors[Math.floor(Math.random()*colors.length)],
+      vx: (Math.random()-0.5)*6,
+      vy: 2 + Math.random()*5,
+      rot: Math.random()*360,
+      vr: (Math.random()-0.5)*12,
+      shape: Math.random() < 0.33 ? 'rect' : Math.random() < 0.66 ? 'circle' : 'tri'
+    });
+  }
+  let t=0;
+  const maxT = 210; // frames
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    let alive=false;
+    for (const p of pieces) {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vy += 0.14; p.vx *= 0.999;
+      if (p.y < H + 20) alive=true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI/180);
+      ctx.fillStyle = p.col;
+      ctx.strokeStyle = '#142014';
+      ctx.lineWidth = 1;
+      if (p.shape==='rect') { ctx.fillRect(-p.r/2,-p.r/3,p.r,p.r*0.62); ctx.strokeRect(-p.r/2,-p.r/3,p.r,p.r*0.62); }
+      else if (p.shape==='circle') { ctx.beginPath(); ctx.arc(0,0,p.r/2,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.moveTo(0,-p.r/2); ctx.lineTo(-p.r/2,p.r/2); ctx.lineTo(p.r/2,p.r/2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (alive && t < maxT) { t++; requestAnimationFrame(frame); }
+    else { ctx.clearRect(0,0,W,H); }
+  }
+  requestAnimationFrame(frame);
+}
+
 function navTo(view) { closeSidebar(); play('nav'); showView(view); }
 
 function groupCandidates(candidates) {
@@ -244,8 +296,41 @@ async function loadContacts() {
   list.innerHTML = rows.map(r => `<div class="reg-card"><div class="reg-meta"><strong>${r.Name} · ${r.Contact}</strong><span class="muted">${new Date(r.CreatedAt).toLocaleString()}</span><span class="muted" style="white-space:pre-wrap">${r.Message}</span></div></div>`).join('');
 }
 
+
+async function loadPositions() {
+  // admin needs token
+  if (!adminToken) { showView('view-admin-login'); return; }
+  const res = await fetch('/api/positions');
+  const data = await res.json();
+  // public list doesn't need token, but we also need to refresh message
+  const list = document.getElementById('positions-list');
+  const msg = document.getElementById('positions-msg');
+  if (!data.ok) { if (msg) msg.textContent = data.error || 'Failed to load positions'; return; }
+  const positions = data.positions || [];
+  // Also fetch admin token check for delete buttons
+  if (!adminToken) return;
+  if (positions.length === 0) { list.innerHTML = '<p class="muted">No positions yet.</p>'; return; }
+  list.innerHTML = positions.map(p => `
+    <div class="reg-card">
+      <div class="reg-meta"><strong>${p.name}</strong><span class="muted small">ID ${p.id}</span></div>
+      <div class="reg-actions"><button class="btn danger sm" data-del-pos="${p.id}" data-name="${p.name}">Remove</button></div>
+    </div>`).join('');
+  list.querySelectorAll('[data-del-pos]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-del-pos');
+      const name = btn.getAttribute('data-name');
+      if (!confirm(`Remove position "${name}"? This deletes its candidates and votes and cannot be undone.`)) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/positions/${id}`, { method:'DELETE', headers:{'x-admin-token': adminToken }});
+      const d = await res.json();
+      if (d.ok) { play('tap'); msg.textContent = `Removed "${name}".`; await loadPositions(); await renderResults(); }
+      else { play('error'); msg.textContent = d.error || 'Remove failed'; btn.disabled=false; }
+    });
+  });
+}
+
 function showAdminTab(which) {
-  const tabs = ['results','registrations','fraud','contacts','guide','settings'];
+  const tabs = ['results','registrations','positions','fraud','contacts','guide','settings'];
   for (const t of tabs) {
     document.getElementById(`tab-${t}`)?.classList.toggle('active', t===which);
     document.getElementById(`admin-panel-${t}`)?.classList.toggle('hidden', t!==which);
@@ -255,6 +340,7 @@ function showAdminTab(which) {
   else if (which==='registrations') loadRegistrations();
   else if (which==='fraud') loadFraud();
   else if (which==='contacts') loadContacts();
+  else if (which==='positions') loadPositions();
 }
 
 // Nav — close sidebar on every navigation
@@ -277,6 +363,13 @@ document.getElementById('success-to-login')?.addEventListener('click', () => nav
 document.getElementById('success-to-guide')?.addEventListener('click', () => navTo('view-onboarding'));
 document.getElementById('success-to-home')?.addEventListener('click', () => navTo('view-landing'));
 document.getElementById('btn-back-home')?.addEventListener('click', () => navTo('view-landing'));
+document.getElementById('btn-share')?.addEventListener('click', async () => {
+  const text = document.getElementById('reward-message')?.textContent || 'I just voted at Kericho Primary — your vote, your voice!';
+  const url = 'https://kericho-voting.onrender.com/';
+  if (navigator.share) { try { await navigator.share({ title:'Kericho Primary — I Voted!', text, url }); play('tap'); } catch {} }
+  else if (navigator.clipboard) { await navigator.clipboard.writeText(text + ' ' + url); alert('Copied — share it with friends!'); play('tap'); }
+  else { alert(text); }
+});
 document.querySelectorAll('[data-go]').forEach(el => {
   el.addEventListener('click', (e) => {
     if (el.tagName === 'A') e.preventDefault();
@@ -304,11 +397,23 @@ document.getElementById('tab-fraud')?.addEventListener('click', () => showAdminT
 document.getElementById('tab-contacts')?.addEventListener('click', () => showAdminTab('contacts'));
 document.getElementById('tab-guide')?.addEventListener('click', () => showAdminTab('guide'));
 document.getElementById('tab-settings')?.addEventListener('click', () => showAdminTab('settings'));
+document.getElementById('tab-positions')?.addEventListener('click', () => showAdminTab('positions'));
 document.getElementById('btn-refresh')?.addEventListener('click', () => { play('tap'); renderResults(); });
 document.getElementById('btn-reg-refresh')?.addEventListener('click', () => { play('tap'); loadRegistrations(); });
 document.getElementById('btn-fraud-refresh')?.addEventListener('click', () => { play('tap'); loadFraud(); });
 document.getElementById('btn-contacts-refresh')?.addEventListener('click', () => { play('tap'); loadContacts(); });
 document.getElementById('btn-print-guide')?.addEventListener('click', () => { play('tap'); window.print(); });
+document.getElementById('form-add-position')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('new-position-name');
+  const msg = document.getElementById('positions-msg');
+  const name = input.value.trim();
+  if (!name) return;
+  const res = await fetch('/api/admin/positions', { method:'POST', headers:{'Content-Type':'application/json','x-admin-token': adminToken}, body: JSON.stringify({name}) });
+  const d = await res.json();
+  if (d.ok) { play('success'); input.value=''; msg.textContent = 'Added — now add candidates under that position via server seed or contact admin.'; await loadPositions(); await renderResults(); }
+  else { play('error'); msg.textContent = d.error || 'Add failed'; }
+});
 document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
   play('tap');
   adminToken = null;
@@ -495,8 +600,26 @@ document.getElementById('form-ballot')?.addEventListener('submit', async (e) => 
       play('error');
       return;
     }
+    // personalized reward from server
+    const reward = data.reward;
+    if (reward) {
+      const badge = document.getElementById('reward-badge');
+      const title = document.getElementById('reward-title');
+      const msg = document.getElementById('reward-message');
+      const tag = document.getElementById('reward-tagline');
+      if (badge) badge.textContent = `${reward.badge} ${reward.title} \u00b7 ${reward.points} pts`;
+      if (title) {
+        const first = (reward.voterName||'').split(/\s+/)[0] || '';
+        title.textContent = first ? `Hongera, ${first}! ${reward.badge}` : reward.title;
+      }
+      if (msg) msg.textContent = reward.message;
+      if (tag) tag.textContent = reward.tagline ? `— ${reward.tagline}` : '';
+    }
     play('submit');
     showView('view-done');
+    // confetti + haptics
+    setTimeout(fireConfetti, 60);
+    if (navigator.vibrate) navigator.vibrate([30,40,30]);
   } catch {
     err.textContent = 'Network error submitting vote.';
     err.classList.remove('hidden');
@@ -538,3 +661,44 @@ document.getElementById('form-admin-login')?.addEventListener('submit', async (e
 
 showView('view-landing');
 setSoundUI();
+
+// PWA — install prompt + service worker
+let deferredPrompt = null;
+const installBanner = document.getElementById('install-banner');
+const installAccept = document.getElementById('install-accept');
+const installDismiss = document.getElementById('install-dismiss');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // don't show if already installed or dismissed recently
+  const dismissed = localStorage.getItem('installDismissedAt');
+  if (dismissed && Date.now() - Number(dismissed) < 1000*60*60*24*3) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  installBanner?.classList.remove('hidden');
+});
+installAccept?.addEventListener('click', async () => {
+  if (!deferredPrompt) { installBanner?.classList.add('hidden'); return; }
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  if (choice.outcome === 'accepted') play('success');
+  deferredPrompt = null;
+  installBanner?.classList.add('hidden');
+});
+installDismiss?.addEventListener('click', () => {
+  installBanner?.classList.add('hidden');
+  localStorage.setItem('installDismissedAt', String(Date.now()));
+  play('tap');
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  installBanner?.classList.add('hidden');
+  play('success');
+});
+
+// Register SW
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
+

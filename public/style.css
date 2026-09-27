@@ -241,6 +241,12 @@ textarea{resize:vertical; min-height:110px}
 .guide ol, .guide ul{margin:6px 0 0; padding-left:18px}
 .guide .callout{border-left:4px solid var(--ink); background:var(--mustard); padding:10px 12px; border-radius:10px; margin:10px 0; border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink)}
 
+/* Install banner */
+.install-banner{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:45; width:min(560px, calc(100vw - 20px)); background:var(--paper); border:var(--brutal-sm); border-radius:16px; box-shadow:var(--brutal-shadow); padding:12px; }
+.install-banner-inner{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+.install-banner-copy strong{display:block; color:var(--ink)}
+.install-banner-copy span{color:var(--muted); font-size:.88rem}
+
 /* Print */
 @media print{
   .topbar, #sidebar, .sidebar-overlay, .footer, .tabs, .btn, #view-landing, #view-login, #view-register, #view-register-success, #view-ballot, #view-done, #view-onboarding, #view-fraud, #view-contact, #view-terms, #view-privacy, #view-admin-login { display:none !important; }
