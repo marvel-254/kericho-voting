@@ -89,7 +89,7 @@ tests.push(ok('TC04 incomplete ballot rejected', async () => {
   assert.match(data.error, /Missing selection/i);
 }));
 
-// TC05 valid ballot tallies + % math
+// TC05 valid ballot tallies + % math (totalVoters grows as TC10/TC11 approve, so compute turnout dynamically)
 tests.push(ok('TC05 valid ballot tallies and percent', async () => {
   const token = await getAdminToken();
   await resetWithToken(token);
@@ -112,7 +112,8 @@ tests.push(ok('TC05 valid ballot tallies and percent', async () => {
     assert.ok(sumPct === 100 || sumPct === 0, `${pos} pct sum ${sumPct}`);
   }
   assert.equal(results.votedCount, 2);
-  assert.equal(results.turnout, 20);
+  const expectedTurnout = Math.round((2 / results.totalVoters) * 100);
+  assert.equal(results.turnout, expectedTurnout, `turnout should be ${expectedTurnout} for 2/${results.totalVoters}`);
 }));
 
 // TC06 admin login → dashboard (requires token)
