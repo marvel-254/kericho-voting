@@ -50,6 +50,21 @@ function initSchema() {
       CreatedAt TEXT NOT NULL DEFAULT (datetime('now')),
       ReviewedAt TEXT
     );
+    CREATE TABLE IF NOT EXISTS fraud_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ReporterName TEXT NOT NULL,
+      AdmissionNumber TEXT,
+      Position TEXT,
+      Details TEXT NOT NULL,
+      CreatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      Name TEXT NOT NULL,
+      Contact TEXT NOT NULL,
+      Message TEXT NOT NULL,
+      CreatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE INDEX IF NOT EXISTS idx_candidates_position ON candidates(Position);
     CREATE INDEX IF NOT EXISTS idx_voters_class ON voters(Class);
     CREATE INDEX IF NOT EXISTS idx_registrations_status ON voter_registrations(Status);
@@ -127,6 +142,8 @@ function serveStatic(res, filepath) {
       '.json': 'application/json; charset=utf-8',
       '.svg': 'image/svg+xml',
       '.ico': 'image/x-icon',
+      '.wav': 'audio/wav',
+      '.mp3': 'audio/mpeg',
     };
     res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
     res.end(content);
@@ -288,6 +305,44 @@ const rejectRegistration = (id) => {
   return { ok: true };
 };
 
+const submitFraudReport = (body) => {
+  const { reporterName, admissionNumber, position, details } = body || {};
+  if (!reporterName || !details) return { ok: false, error: 'Name and details are required' };
+  const name = String(reporterName).trim();
+  const adm = admissionNumber ? String(admissionNumber).trim().toUpperCase() : null;
+  const pos = position ? String(position).trim() : null;
+  const det = String(details).trim();
+  if (name.length < 2) return { ok: false, error: 'Name too short' };
+  if (det.length < 10) return { ok: false, error: 'Please describe the issue (at least 10 characters)' };
+  if (det.length > 2000) return { ok: false, error: 'Details too long (max 2000)' };
+  db.prepare('INSERT INTO fraud_reports (ReporterName, AdmissionNumber, Position, Details) VALUES (?, ?, ?, ?)').run(name, adm, pos, det);
+  return { ok: true };
+};
+
+const submitContact = (body) => {
+  const { name, contact, message } = body || {};
+  if (!name || !contact || !message) return { ok: false, error: 'All fields are required' };
+  const n = String(name).trim();
+  const c = String(contact).trim();
+  const m = String(message).trim();
+  if (n.length < 2) return { ok: false, error: 'Name too short' };
+  if (c.length < 5) return { ok: false, error: 'Contact too short' };
+  if (m.length < 10) return { ok: false, error: 'Message must be at least 10 characters' };
+  if (m.length > 2000) return { ok: false, error: 'Message too long (max 2000)' };
+  db.prepare('INSERT INTO contact_messages (Name, Contact, Message) VALUES (?, ?, ?)').run(n, c, m);
+  return { ok: true };
+};
+
+const listFraudReports = () => {
+  const rows = db.prepare('SELECT * FROM fraud_reports ORDER BY CreatedAt DESC').all();
+  return { ok: true, reports: rows };
+};
+
+const listContacts = () => {
+  const rows = db.prepare('SELECT * FROM contact_messages ORDER BY CreatedAt DESC').all();
+  return { ok: true, messages: rows };
+};
+
 initSchema();
 seedIfEmpty();
 
@@ -330,6 +385,34 @@ const server = http.createServer((req, res) => {
       try {
         const data = JSON.parse(body);
         sendJSON(res, 200, registerVoter(data));
+      } catch (e) {
+        sendJSON(res, 500, { ok: false, error: e.message });
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/fraud') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        sendJSON(res, 200, submitFraudReport(data));
+      } catch (e) {
+        sendJSON(res, 500, { ok: false, error: e.message });
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/contact') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        sendJSON(res, 200, submitContact(data));
       } catch (e) {
         sendJSON(res, 500, { ok: false, error: e.message });
       }
@@ -397,6 +480,24 @@ const server = http.createServer((req, res) => {
     }
     const id = Number(rejectMatch[1]);
     sendJSON(res, 200, rejectRegistration(id));
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/admin/fraud') {
+    if (!isAdminAuthorized(req)) {
+      sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' });
+      return;
+    }
+    sendJSON(res, 200, listFraudReports());
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/admin/contacts') {
+    if (!isAdminAuthorized(req)) {
+      sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' });
+      return;
+    }
+    sendJSON(res, 200, listContacts());
     return;
   }
 

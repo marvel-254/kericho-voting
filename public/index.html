@@ -17,39 +17,43 @@
     </div>
     <nav class="top-nav" aria-label="Primary">
       <button id="nav-home" class="btn ghost sm">Home</button>
+      <button id="nav-guide" class="btn ghost sm">How to Vote</button>
       <button id="nav-register" class="btn ghost sm">Register</button>
       <button id="nav-login" class="btn ghost sm">Login</button>
       <button id="btn-admin-nav" class="btn ghost sm">Admin</button>
+      <button id="sound-toggle" class="btn ghost sm" title="Toggle sounds">🔊</button>
     </nav>
   </header>
 
   <main class="container">
-    <!-- Landing / Hero -->
+    <!-- Landing / Hero with voting imagery -->
     <section id="view-landing">
       <div class="hero card">
         <div class="hero-grid">
           <div class="hero-copy">
-            <span class="eyebrow">Pupil Leadership Elections · 2026</span>
-            <h2 class="hero-title">Your vote. Your voice.<br/>Your school.</h2>
-            <p class="hero-sub">A secure, one-vote-per-pupil system for Kericho Primary. Register for approval, then cast your ballot for five leadership positions.</p>
+            <span class="eyebrow">Pupil Leadership Elections · 2026 · Secure · One vote per pupil</span>
+            <h2 class="hero-title">Your vote.<br/>Your voice.<br/>Your school.</h2>
+            <p class="hero-sub">A safe, fair and transparent election for Kericho Primary. Register for admin approval, then cast one ballot across five leadership positions — no paper, no queues.</p>
             <div class="hero-ctas">
               <button id="hero-register" class="btn primary lg">Register to Vote →</button>
-              <button id="hero-login" class="btn lg">Login to Vote</button>
+              <button id="hero-login" class="btn ghost lg">Login to Vote</button>
+              <button id="hero-guide" class="btn ghost lg">First time? See guide</button>
             </div>
-            <p class="muted small">New voter? Your registration needs admin approval before you can vote. Already approved? Head straight to ballot.</p>
+            <p class="muted small" style="color:rgba(255,255,255,.9)">New voter? Your registration needs admin approval before you can vote. Already approved? Head straight to ballot.</p>
           </div>
           <div class="hero-art" aria-hidden="true">
             <div class="hero-badge">
               <div class="badge-ring">✓</div>
-              <strong>Secure</strong><span>One vote per pupil<br/>PIN-protected</span>
+              <div>
+                <strong>Verified &amp; auditable</strong>
+                <span>PIN-protected · One vote per pupil<br/>Admin-reviewed registrations</span>
+              </div>
             </div>
             <div class="hero-positions">
-              <span>5 positions</span>
+              <span>5 positions to vote</span>
               <ul>
-                <li>Head Boy</li>
-                <li>Head Girl</li>
-                <li>Assistant Head Boy</li>
-                <li>Assistant Head Girl</li>
+                <li>Head Boy &amp; Head Girl — School Captains</li>
+                <li>Assistant Head Boy &amp; Head Girl</li>
                 <li>Games Captain</li>
               </ul>
             </div>
@@ -57,18 +61,39 @@
         </div>
       </div>
 
+      <div class="secondary-hero card">
+        <div class="section-head">
+          <h2 style="margin:0">Why online voting?</h2>
+          <span class="badge">Fair · Fast · Private</span>
+        </div>
+        <div class="triple" style="margin-top:12px">
+          <div class="card mini">
+            <h3>Private ballot</h3>
+            <p class="muted">Your choices are counted anonymously. No one sees who you picked except the final totals.</p>
+          </div>
+          <div class="card mini">
+            <h3>Instant tally</h3>
+            <p class="muted">Results and turnout update live for the admin — no hand counting, no errors.</p>
+          </div>
+          <div class="card mini">
+            <h3>Cheating prevented</h3>
+            <p class="muted">Double voting blocked forever, cross-position tricks rejected, every vote is validated.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="triple">
         <div class="card mini">
           <h3>1 · Register</h3>
-          <p class="muted">Enter admission number, name, class &amp; choose a PIN. Admin reviews the application.</p>
+          <p class="muted">Admission number, full name, class &amp; your PIN. Sent for admin approval.</p>
         </div>
         <div class="card mini">
           <h3>2 · Get approved</h3>
-          <p class="muted">Admin approves in the dashboard. You receive no email — just try logging in again.</p>
+          <p class="muted">Admin reviews in the dashboard. Try logging in again — no email needed.</p>
         </div>
         <div class="card mini">
           <h3>3 · Vote once</h3>
-          <p class="muted">Log in with admission + PIN, pick one candidate per position, submit. Permanent.</p>
+          <p class="muted">Log in, pick one candidate per position, submit. You cannot change it after.</p>
         </div>
       </div>
 
@@ -84,14 +109,75 @@
           <div class="pos-card"><strong>Assistant</strong><span>Head Girl</span></div>
           <div class="pos-card"><strong>Games</strong><span>Captain</span></div>
         </div>
-        <div class="row" style="margin-top:12px">
+        <div class="row" style="margin-top:14px">
           <button id="landing-cta-register" class="btn primary">Create voter account</button>
-          <button id="landing-cta-login" class="btn">I already have a PIN</button>
+          <button id="landing-cta-login" class="btn ghost dark">I already have a PIN</button>
+          <button id="landing-cta-guide" class="btn ghost dark">How to vote guide</button>
+          <button id="landing-cta-fraud" class="btn ghost dark">Report an issue</button>
         </div>
       </div>
     </section>
 
-    <!-- Pupil Login -->
+    <!-- After-registration confirmation -->
+    <section id="view-register-success" class="card hidden">
+      <div style="text-align:center; padding:10px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:1.6rem">✓</div>
+        <h2>Application received</h2>
+        <p class="muted" id="register-success-detail">Thank you — your registration is now <strong>pending admin approval</strong>.</p>
+        <p class="muted small">You will use the same admission number and PIN you just chose once approved. No email is sent — simply try logging in after a short while. If rejected, you can apply again.</p>
+        <div class="row" style="justify-content:center; margin-top:12px">
+          <button id="success-to-login" class="btn primary">Go to Login</button>
+          <button id="success-to-guide" class="btn ghost dark">Learn how to vote</button>
+          <button id="success-to-home" class="btn ghost dark">Back to Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Onboarding / How to Vote -->
+    <section id="view-onboarding" class="card hidden">
+      <div class="section-head">
+        <h2>How to vote — first-timer guide</h2>
+        <span class="badge">5 steps · takes 2 minutes</span>
+      </div>
+      <p class="muted">Never voted online before? Follow this walkthrough. No jargon — just what to tap.</p>
+      <div class="onboarding-steps" style="margin-top:10px">
+        <div class="step">
+          <div class="step-num">1</div>
+          <strong>Register</strong>
+          <p class="muted small">Tap <em>Register</em> → enter admission number, name, class and pick a PIN (4+ characters). Submit — you will see “pending”.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <strong>Wait for approval</strong>
+          <p class="muted small">Admin checks every name. If rejected, you can re-apply with the same admission number.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <strong>Log in</strong>
+          <p class="muted small"><em>Login</em> → admission + PIN → you will land on the ballot. If it says “already voted”, you have finished.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <strong>Pick one per position</strong>
+          <p class="muted small">Five sections — Head Boy, Head Girl, Assistant Head Boy, Assistant Head Girl, Games Captain. Tap one name in each.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <strong>Submit — you’re done</strong>
+          <p class="muted small">Hit <em>Submit My Vote ✓</em>. After that you cannot vote again — this protects fairness.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:12px">
+        <strong>Tips:</strong> Choose carefully — you cannot change later. Keep your PIN private. If anything looks wrong, use <em>Report Fraud</em> below. Need help? <em>Contact Us</em>.
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" data-go="register">Register now →</button>
+        <button class="btn ghost dark" data-go="login">Go to Login</button>
+        <button class="btn ghost dark" data-go="landing">Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Pupil Login (demo hint removed) -->
     <section id="view-login" class="card hidden">
       <h2>Pupil Login</h2>
       <p class="muted">Enter your admission number and PIN to access your ballot. One vote per pupil. New accounts must be approved first.</p>
@@ -106,18 +192,15 @@
         <p id="login-error" class="error hidden"></p>
       </form>
       <div class="row" style="margin-top:10px">
-        <button id="login-to-register" class="btn">Need an account? Register</button>
+        <button id="login-to-register" class="btn ghost dark">Need an account? Register</button>
+        <button id="login-to-guide" class="btn ghost dark">How to vote</button>
       </div>
-      <details class="hint">
-        <summary>Demo accounts</summary>
-        <p class="muted">Demo pupils: PIN <code>1234</code>. Admissions <code>KP001</code>–<code>KP010</code>. Admin: <code>admin / admin123</code></p>
-      </details>
     </section>
 
     <!-- Registration -->
     <section id="view-register" class="card hidden">
       <h2>New Voter Registration</h2>
-      <p class="muted">Your application goes to the admin for approval. Use the PIN you choose here to log in after approval. You can re-apply if rejected.</p>
+      <p class="muted">Your application goes to admin for approval. Use the PIN you choose here to log in after approval. You can re-apply if rejected.</p>
       <form id="form-register" class="stack">
         <label>Admission Number
           <input id="reg-adm" type="text" placeholder="e.g. KP011" autocomplete="off" required />
@@ -136,11 +219,100 @@
         </label>
         <button type="submit" class="btn primary">Submit for Approval →</button>
         <p id="register-error" class="error hidden"></p>
-        <p id="register-ok" class="ok hidden"></p>
       </form>
       <div class="row" style="margin-top:10px">
-        <button id="register-to-login" class="btn">Already approved? Log in</button>
+        <button id="register-to-login" class="btn ghost dark">Already approved? Log in</button>
         <button id="register-to-home" class="btn ghost dark">← Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Report Fraud -->
+    <section id="view-fraud" class="card hidden">
+      <h2>Report fraud or an issue</h2>
+      <p class="muted">Seen something wrong — double voting, impersonation, a broken ballot, or pressure to vote a certain way? Tell the admin confidentially.</p>
+      <form id="form-fraud" class="stack">
+        <label>Your name (required)
+          <input id="fraud-name" type="text" placeholder="e.g. Faith Chepngeno" required />
+        </label>
+        <label>Admission number (optional)
+          <input id="fraud-adm" type="text" placeholder="e.g. KP003" />
+        </label>
+        <label>Position concerned (optional)
+          <select id="fraud-position">
+            <option value="">— Select if relevant —</option>
+            <option>School Captain (Head Boy)</option>
+            <option>School Captain (Head Girl)</option>
+            <option>Assistant Head Boy</option>
+            <option>Assistant Head Girl</option>
+            <option>Games Captain</option>
+          </select>
+        </label>
+        <label>Details (required, 10–2000)
+          <textarea id="fraud-details" placeholder="Describe what happened, when, and who was involved…" required></textarea>
+        </label>
+        <button type="submit" class="btn primary">Submit Report →</button>
+        <p id="fraud-error" class="error hidden"></p>
+        <p id="fraud-ok" class="ok hidden"></p>
+      </form>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost dark" data-go="landing">Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Contact Us -->
+    <section id="view-contact" class="card hidden">
+      <h2>Contact Us</h2>
+      <p class="muted">Questions, help logging in, or feedback about the voting system? Reach the election team.</p>
+      <form id="form-contact" class="stack">
+        <label>Your name
+          <input id="contact-name" type="text" placeholder="e.g. Mr. Rotich" required />
+        </label>
+        <label>Phone or email
+          <input id="contact-contact" type="text" placeholder="e.g. 0712 345 678 or name@school.ke" required />
+        </label>
+        <label>Message
+          <textarea id="contact-message" placeholder="How can we help?" required></textarea>
+        </label>
+        <button type="submit" class="btn primary">Send Message →</button>
+        <p id="contact-error" class="error hidden"></p>
+        <p id="contact-ok" class="ok hidden"></p>
+      </form>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost dark" data-go="landing">Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Terms -->
+    <section id="view-terms" class="card hidden">
+      <h2>Terms of Use</h2>
+      <p class="muted small">Last updated: 28 September 2026 — Kericho Primary Online Voting</p>
+      <div class="legal">
+        <p><strong>1. Eligibility.</strong> Only pupils with a valid admission number approved by the admin may vote. One admission, one vote, no transfers.</p>
+        <p><strong>2. One ballot.</strong> Submitting is final. You cannot change, withdraw or re-vote. Double voting attempts are blocked and logged.</p>
+        <p><strong>3. Your PIN.</strong> Keep it private. Anyone with your admission + PIN can vote as you. The school never asks for your PIN outside this site.</p>
+        <p><strong>4. Fair use.</strong> Do not impersonate, coerce others, or interfere with the service. Fraud reports are reviewed; abuse may lead to disciplinary action.</p>
+        <p><strong>5. Availability.</strong> Free-tier hosting may cold-start (a few seconds) and resets the temporary database on redeploys — seed data is restored automatically for demos.</p>
+        <p><strong>6. Changes.</strong> The admin may reset the election (clearing votes/HasVoted) when authorised. Terms may be updated; continued use means acceptance.</p>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost dark" data-go="landing">Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section id="view-privacy" class="card hidden">
+      <h2>Privacy Policy</h2>
+      <p class="muted small">Last updated: 28 September 2026 — Kericho Primary Online Voting</p>
+      <div class="legal">
+        <p><strong>What we collect:</strong> Admission number, name, class, and a hashed PIN (never plain text). Votes are counted per candidate; the system links a voter to “has voted” but does not expose individual choices to other pupils.</p>
+        <p><strong>What we store:</strong> SQLite file on the server. On the free host the file is ephemeral and re-seeded on restart. Fraud and contact messages are stored for admin review.</p>
+        <p><strong>Who sees it:</strong> Only the authenticated admin (username/password, token-gated API) can see turnout, tallies, registrations, fraud and contact messages.</p>
+        <p><strong>Security:</strong> PINs are SHA-256 hashed. Admin routes require <code>x-admin-token</code>. Inputs are validated and transaction-wrapped. No third-party trackers.</p>
+        <p><strong>Your rights:</strong> Ask the admin to correct your registration or remove a fraud/contact message you submitted. Votes cannot be undone after submission.</p>
+        <p><strong>Contact:</strong> Use the Contact page or speak to the supervising teacher (Grofry Rotich).</p>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost dark" data-go="landing">Back to Home</button>
       </div>
     </section>
 
@@ -160,9 +332,14 @@
 
     <!-- Success -->
     <section id="view-done" class="card hidden">
-      <h2>✓ Vote Recorded</h2>
-      <p>Thank you — your vote has been securely recorded. You cannot vote again.</p>
-      <button id="btn-back-home" class="btn">Back to Home</button>
+      <div style="text-align:center; padding:8px 0">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:1.6rem">✓</div>
+        <h2>Vote recorded</h2>
+        <p class="muted">Thank you — your vote has been securely recorded. You cannot vote again.</p>
+        <div class="row" style="justify-content:center; margin-top:12px">
+          <button id="btn-back-home" class="btn ghost dark">Back to Home</button>
+        </div>
+      </div>
     </section>
 
     <!-- Admin Login -->
@@ -188,6 +365,7 @@
           <h2>Admin Dashboard</h2>
           <div class="row">
             <button id="btn-refresh" class="btn ghost dark">Refresh</button>
+            <button id="btn-print-guide" class="btn ghost dark">Print Guide</button>
             <button id="btn-reset" class="btn danger">Reset Election</button>
             <button id="btn-admin-logout" class="btn">Log out</button>
           </div>
@@ -195,6 +373,9 @@
         <div class="tabs">
           <button id="tab-results" class="tab active">Live Results</button>
           <button id="tab-registrations" class="tab">Registrations <span id="reg-count" class="tab-count hidden">0</span></button>
+          <button id="tab-fraud" class="tab">Fraud Reports <span id="fraud-count" class="tab-count hidden">0</span></button>
+          <button id="tab-contacts" class="tab">Messages <span id="contact-count" class="tab-count hidden">0</span></button>
+          <button id="tab-guide" class="tab">System Guide</button>
         </div>
 
         <div id="admin-panel-results">
@@ -216,12 +397,72 @@
           <div id="registrations-list"></div>
           <p id="registrations-msg" class="muted"></p>
         </div>
+
+        <div id="admin-panel-fraud" class="hidden">
+          <div class="section-head" style="margin-top:6px">
+            <h3 style="margin:0">Fraud &amp; issue reports</h3>
+            <button id="btn-fraud-refresh" class="btn ghost dark">Refresh</button>
+          </div>
+          <div id="fraud-list"></div>
+          <p id="fraud-msg" class="muted"></p>
+        </div>
+
+        <div id="admin-panel-contacts" class="hidden">
+          <div class="section-head" style="margin-top:6px">
+            <h3 style="margin:0">Contact messages</h3>
+            <button id="btn-contacts-refresh" class="btn ghost dark">Refresh</button>
+          </div>
+          <div id="contacts-list"></div>
+          <p id="contacts-msg" class="muted"></p>
+        </div>
+
+        <div id="admin-panel-guide" class="hidden">
+          <div class="guide" id="printable-guide">
+            <h2 style="margin:0">Kericho Primary — Online Voting: How the whole thing works</h2>
+            <p class="muted small">For the admin and supervising teacher. Print this page with the “Print Guide” button.</p>
+            <div class="callout"><strong>Stack:</strong> Node 24 built-in <code>http</code> + <code>node:sqlite</code> (no npm), single static client, SQLite file <code>voting.db</code> (ephemeral on Render free tier, auto-seeded). Admin auth via <code>x-admin-token</code>.</div>
+            <h3>1. Who can vote</h3>
+            <p class="muted">Any pupil with an approved admission number + PIN. New pupils register on the site; admin approves/rejects in <em>Admin → Registrations</em>. Seed demo voters: <code>KP001–KP010</code> (PIN <code>1234</code>).</p>
+            <h3>2. The ballot</h3>
+            <p class="muted">Five positions, two candidates each: Head Boy, Head Girl, Assistant Head Boy, Assistant Head Girl, Games Captain. Exactly one choice per position. Submit is validated server-side (missing, invalid ID, or cross-position candidate → rejected; <code>HasVoted</code> blocks a second submit forever).</p>
+            <h3>3. Registration → approval flow</h3>
+            <ol class="muted">
+              <li>Pupil submits <code>POST /api/register</code> → row in <code>voter_registrations</code> as <code>pending</code>.</li>
+              <li>Admin lists <code>GET /api/admin/registrations</code> (pending first), then <code>POST /approve/:id</code> (inserts into <code>voters</code> + approved) or <code>POST /reject/:id</code> (rejected → pupil can re-apply).</li>
+              <li>Approved pupil logs in <code>POST /api/login</code> → receives candidate list; then <code>POST /api/vote</code>.</li>
+            </ol>
+            <h3>4. Results &amp; turnout</h3>
+            <p class="muted"><code>GET /api/results</code> (admin only) returns <code>byPosition[{candidateId,name,class,votes,percent}]</code> plus turnout. Percent per position = votes / total-votes-in-position. Admin dashboard shows KPIs and bars.</p>
+            <h3>5. Safety controls</h3>
+            <ul class="muted">
+              <li>PINs stored as SHA-256 hex, never plaintext.</li>
+              <li><code>POST /api/reset</code> (admin only) clears <code>votes</code> and <code>HasVoted</code> in a transaction.</li>
+              <li>Fraud reports (<code>POST /api/fraud</code> public) and contact messages (<code>POST /api/contact</code> public) visible only to admin.</li>
+              <li>Server binds <code>0.0.0.0:${PORT}</code> (Render injects <code>PORT</code>), <code>NODE_VERSION=24</code> on Render.</li>
+            </ul>
+            <h3>6. Running locally</h3>
+            <p class="muted"><code>node server.js</code> → <code>http://localhost:3000</code>. Tests: <code>BASE_URL=http://localhost:3000 node test/smoke.mjs</code> (or against <code>https://kericho-voting.onrender.com</code>).</p>
+            <h3>7. Deploy &amp; CI</h3>
+            <p class="muted">GitHub <code>marvel-254/kericho-voting</code> <code>main</code> → Render service <code>kericho-voting</code> (Oregon, free, <code>autoDeploy: yes</code>, <code>render.yaml</code>). CI: <code>.github/workflows/ci.yml</code> runs <code>node --check</code> + smoke on push/PR.</p>
+            <p class="muted small">Built for clarity and fairness — keep the teacher’s admin credentials safe.</p>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Kericho Primary · School of Computing &amp; Information Science — built with Node.js + SQLite · <a href="#" id="footer-admin-link">Admin</a></p>
+    <span>Built by <strong>Sharon</strong> — Kericho Primary Voting</span>
+    <nav aria-label="Footer">
+      <a href="#" data-go="landing">Home</a>
+      <a href="#" data-go="guide">How to vote</a>
+      <a href="#" data-go="fraud">Report Fraud</a>
+      <a href="#" data-go="contact">Contact Us</a>
+      <a href="#" data-go="terms">Terms</a>
+      <a href="#" data-go="privacy">Privacy</a>
+      <a href="#" id="footer-admin-link">Admin</a>
+      <span class="sound-toggle"><span id="sound-label">Sounds on</span></span>
+    </nav>
   </footer>
 
   <script src="/public/app.js" type="module"></script>
