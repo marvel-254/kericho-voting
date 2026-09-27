@@ -1,12 +1,13 @@
-const $ = (s) => document.querySelector(s);
-const views = ['view-login','view-ballot','view-done','view-admin-login','view-admin'];
+const views = ['view-landing','view-login','view-register','view-ballot','view-done','view-admin-login','view-admin'];
 
 function showView(id) {
-  for (const v of views) document.getElementById(v).classList.add('hidden');
-  document.getElementById(id).classList.remove('hidden');
+  for (const v of views) document.getElementById(v)?.classList.add('hidden');
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-let currentVoter = null; // { AdmissionNumber, Name, Class }
+let currentVoter = null;
 let candidatesByPosition = {};
 let adminToken = sessionStorage.getItem('adminToken') || null;
 
@@ -66,10 +67,7 @@ async function renderResults() {
     for (const c of data.byPosition[pos]) {
       const row = document.createElement('div');
       row.className = 'result-row';
-      row.innerHTML = `
-        <span><strong>${c.name}</strong> · ${c.class}</span>
-        <span>${c.votes} votes · ${c.percent}%</span>
-      `;
+      row.innerHTML = `<span><strong>${c.name}</strong> · ${c.class}</span><span>${c.votes} votes · ${c.percent}%</span>`;
       const bar = document.createElement('div');
       bar.className = 'bar';
       const fill = document.createElement('span');
@@ -78,7 +76,6 @@ async function renderResults() {
       sec.appendChild(row);
       sec.appendChild(bar);
     }
-    // sum check
     const totalVotes = data.byPosition[pos].reduce((s, x) => s + x.votes, 0);
     const sumPct = data.byPosition[pos].reduce((s, x) => s + x.percent, 0);
     const meta = document.createElement('p');
@@ -89,7 +86,141 @@ async function renderResults() {
   }
 }
 
-document.getElementById('form-login').addEventListener('submit', async (e) => {
+async function loadRegistrations() {
+  if (!adminToken) { showView('view-admin-login'); return; }
+  const res = await fetch('/api/admin/registrations', { headers: { 'x-admin-token': adminToken } });
+  const data = await res.json();
+  if (res.status === 401 || !data.ok) {
+    adminToken = null;
+    sessionStorage.removeItem('adminToken');
+    showView('view-admin-login');
+    const err = document.getElementById('admin-error');
+    err.textContent = data.error || 'Session expired — please log in again.';
+    err.classList.remove('hidden');
+    return;
+  }
+  const list = document.getElementById('registrations-list');
+  const countEl = document.getElementById('reg-count');
+  const regs = data.registrations || [];
+  const pending = regs.filter(r => r.Status === 'pending').length;
+  if (pending > 0) {
+    countEl.textContent = String(pending);
+    countEl.classList.remove('hidden');
+  } else {
+    countEl.classList.add('hidden');
+  }
+  if (regs.length === 0) {
+    list.innerHTML = `<p class="muted">No registrations yet.</p>`;
+    return;
+  }
+  list.innerHTML = '';
+  for (const r of regs) {
+    const card = document.createElement('div');
+    card.className = 'reg-card';
+    const statusClass = r.Status;
+    card.innerHTML = `
+      <div class="reg-meta">
+        <strong>${r.Name} · ${r.AdmissionNumber}</strong>
+        <span class="muted">${r.Class} · ${new Date(r.CreatedAt).toLocaleString()}</span>
+        <span class="status ${statusClass}">${r.Status}</span>
+      </div>
+      <div class="reg-actions">
+        ${r.Status === 'pending' ? `<button class="btn primary sm" data-approve="${r.id}">Approve</button><button class="btn danger sm" data-reject="${r.id}">Reject</button>` : `<span class="muted small">Reviewed: ${r.ReviewedAt ? new Date(r.ReviewedAt).toLocaleString() : '—'}</span>`}
+      </div>
+    `;
+    list.appendChild(card);
+  }
+  list.querySelectorAll('[data-approve]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-approve');
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/registrations/${id}/approve`, { method: 'POST', headers: { 'x-admin-token': adminToken } });
+      const d = await res.json();
+      const msg = document.getElementById('registrations-msg');
+      if (d.ok) { msg.textContent = 'Approved — voter can now log in.'; await loadRegistrations(); await renderResults(); }
+      else { msg.textContent = d.error || 'Approve failed.'; btn.disabled = false; }
+    });
+  });
+  list.querySelectorAll('[data-reject]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-reject');
+      if (!confirm('Reject this registration? The applicant can re-apply.')) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/registrations/${id}/reject`, { method: 'POST', headers: { 'x-admin-token': adminToken } });
+      const d = await res.json();
+      const msg = document.getElementById('registrations-msg');
+      if (d.ok) { msg.textContent = 'Rejected.'; await loadRegistrations(); }
+      else { msg.textContent = d.error || 'Reject failed.'; btn.disabled = false; }
+    });
+  });
+}
+
+function showAdminTab(which) {
+  const btnResults = document.getElementById('tab-results');
+  const btnRegs = document.getElementById('tab-registrations');
+  const panelResults = document.getElementById('admin-panel-results');
+  const panelRegs = document.getElementById('admin-panel-registrations');
+  if (which === 'registrations') {
+    btnResults.classList.remove('active'); btnRegs.classList.add('active');
+    panelResults.classList.add('hidden'); panelRegs.classList.remove('hidden');
+    loadRegistrations();
+  } else {
+    btnRegs.classList.remove('active'); btnResults.classList.add('active');
+    panelRegs.classList.add('hidden'); panelResults.classList.remove('hidden');
+    renderResults();
+  }
+}
+
+// Navigation
+document.getElementById('nav-home')?.addEventListener('click', () => showView('view-landing'));
+document.getElementById('nav-register')?.addEventListener('click', () => showView('view-register'));
+document.getElementById('nav-login')?.addEventListener('click', () => showView('view-login'));
+document.getElementById('hero-register')?.addEventListener('click', () => showView('view-register'));
+document.getElementById('hero-login')?.addEventListener('click', () => showView('view-login'));
+document.getElementById('landing-cta-register')?.addEventListener('click', () => showView('view-register'));
+document.getElementById('landing-cta-login')?.addEventListener('click', () => showView('view-login'));
+document.getElementById('login-to-register')?.addEventListener('click', () => showView('view-register'));
+document.getElementById('register-to-login')?.addEventListener('click', () => showView('view-login'));
+document.getElementById('register-to-home')?.addEventListener('click', () => showView('view-landing'));
+document.getElementById('btn-back-home')?.addEventListener('click', () => showView('view-landing'));
+
+document.getElementById('btn-admin-nav')?.addEventListener('click', () => {
+  if (adminToken) { showView('view-admin'); showAdminTab('results'); }
+  else showView('view-admin-login');
+});
+document.getElementById('footer-admin-link')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (adminToken) { showView('view-admin'); showAdminTab('results'); }
+  else showView('view-admin-login');
+});
+document.getElementById('btn-admin-back')?.addEventListener('click', () => showView('view-landing'));
+document.getElementById('tab-results')?.addEventListener('click', () => showAdminTab('results'));
+document.getElementById('tab-registrations')?.addEventListener('click', () => showAdminTab('registrations'));
+document.getElementById('btn-refresh')?.addEventListener('click', renderResults);
+document.getElementById('btn-reg-refresh')?.addEventListener('click', loadRegistrations);
+document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
+  adminToken = null;
+  sessionStorage.removeItem('adminToken');
+  showView('view-landing');
+});
+document.getElementById('btn-reset')?.addEventListener('click', async () => {
+  if (!confirm('Reset all votes and allow everyone to vote again?')) return;
+  const res = await fetch('/api/reset', { method: 'POST', headers: { 'x-admin-token': adminToken || '' } });
+  const data = await res.json();
+  if (res.status === 401) {
+    alert(data.error || 'Unauthorized — please log in again.');
+    adminToken = null;
+    sessionStorage.removeItem('adminToken');
+    showView('view-admin-login');
+    return;
+  }
+  if (!data.ok) { alert(data.error || 'Reset failed'); return; }
+  document.getElementById('admin-msg').textContent = 'Election reset — all votes cleared.';
+  await renderResults();
+});
+
+// Pupil login
+document.getElementById('form-login')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const adm = document.getElementById('login-adm').value.trim().toUpperCase();
   const pin = document.getElementById('login-pin').value;
@@ -117,7 +248,45 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
   }
 });
 
-document.getElementById('form-ballot').addEventListener('submit', async (e) => {
+// Registration
+document.getElementById('form-register')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const adm = document.getElementById('reg-adm').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+  const klass = document.getElementById('reg-class').value.trim();
+  const pin = document.getElementById('reg-pin').value;
+  const pin2 = document.getElementById('reg-pin2').value;
+  const err = document.getElementById('register-error');
+  const ok = document.getElementById('register-ok');
+  err.classList.add('hidden'); ok.classList.add('hidden');
+  if (pin !== pin2) {
+    err.textContent = 'PINs do not match.';
+    err.classList.remove('hidden');
+    return;
+  }
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admissionNumber: adm, name, class: klass, pin })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      err.textContent = data.error;
+      err.classList.remove('hidden');
+      return;
+    }
+    ok.textContent = `Application submitted for ${data.registration.AdmissionNumber} — awaiting admin approval. Try logging in after approval.`;
+    ok.classList.remove('hidden');
+    e.target.reset();
+  } catch {
+    err.textContent = 'Network error.';
+    err.classList.remove('hidden');
+  }
+});
+
+// Ballot submit
+document.getElementById('form-ballot')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const err = document.getElementById('ballot-error');
   err.classList.add('hidden');
@@ -150,24 +319,8 @@ document.getElementById('form-ballot').addEventListener('submit', async (e) => {
   }
 });
 
-document.getElementById('btn-back-home').addEventListener('click', () => {
-  currentVoter = null;
-  document.getElementById('form-login').reset();
-  showView('view-login');
-});
-
-document.getElementById('btn-admin-nav').addEventListener('click', () => {
-  if (adminToken) { showView('view-admin'); renderResults(); }
-  else showView('view-admin-login');
-});
-document.getElementById('footer-admin-link').addEventListener('click', (e) => {
-  e.preventDefault();
-  if (adminToken) { showView('view-admin'); renderResults(); }
-  else showView('view-admin-login');
-});
-document.getElementById('btn-admin-back').addEventListener('click', () => showView('view-login'));
-
-document.getElementById('form-admin-login').addEventListener('submit', async (e) => {
+// Admin login
+document.getElementById('form-admin-login')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('admin-user').value.trim();
   const password = document.getElementById('admin-pass').value;
@@ -187,37 +340,13 @@ document.getElementById('form-admin-login').addEventListener('submit', async (e)
     }
     adminToken = data.token;
     sessionStorage.setItem('adminToken', adminToken);
-    await renderResults();
     showView('view-admin');
+    showAdminTab('results');
   } catch {
     err.textContent = 'Network error.';
     err.classList.remove('hidden');
   }
 });
 
-document.getElementById('btn-refresh').addEventListener('click', renderResults);
-document.getElementById('btn-admin-logout').addEventListener('click', () => {
-  adminToken = null;
-  sessionStorage.removeItem('adminToken');
-  showView('view-login');
-});
-document.getElementById('btn-reset').addEventListener('click', async () => {
-  if (!confirm('Reset all votes and allow everyone to vote again?')) return;
-  const res = await fetch('/api/reset', { method: 'POST', headers: { 'x-admin-token': adminToken || '' } });
-  const data = await res.json();
-  if (res.status === 401) {
-    alert(data.error || 'Unauthorized — please log in again.');
-    adminToken = null;
-    sessionStorage.removeItem('adminToken');
-    showView('view-admin-login');
-    return;
-  }
-  if (!data.ok) { alert(data.error || 'Reset failed'); return; }
-  document.getElementById('admin-msg').textContent = 'Election reset — all votes cleared.';
-  await renderResults();
-});
-
-// auto-open dashboard if already has token
-if (adminToken) {
-  // leave on login view; render lazily when they click Admin
-}
+// Default view
+showView('view-landing');

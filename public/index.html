@@ -12,19 +12,89 @@
       <div class="crest">KP</div>
       <div>
         <h1>Kericho Primary School</h1>
-        <p>Online Voting Management System · Pupil Leadership Elections</p>
+        <p>Online Voting Management System</p>
       </div>
     </div>
-    <div class="top-actions">
-      <button id="btn-admin-nav" class="btn ghost">Admin</button>
-    </div>
+    <nav class="top-nav" aria-label="Primary">
+      <button id="nav-home" class="btn ghost sm">Home</button>
+      <button id="nav-register" class="btn ghost sm">Register</button>
+      <button id="nav-login" class="btn ghost sm">Login</button>
+      <button id="btn-admin-nav" class="btn ghost sm">Admin</button>
+    </nav>
   </header>
 
   <main class="container">
+    <!-- Landing / Hero -->
+    <section id="view-landing">
+      <div class="hero card">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">Pupil Leadership Elections · 2026</span>
+            <h2 class="hero-title">Your vote. Your voice.<br/>Your school.</h2>
+            <p class="hero-sub">A secure, one-vote-per-pupil system for Kericho Primary. Register for approval, then cast your ballot for five leadership positions.</p>
+            <div class="hero-ctas">
+              <button id="hero-register" class="btn primary lg">Register to Vote →</button>
+              <button id="hero-login" class="btn lg">Login to Vote</button>
+            </div>
+            <p class="muted small">New voter? Your registration needs admin approval before you can vote. Already approved? Head straight to ballot.</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="hero-badge">
+              <div class="badge-ring">✓</div>
+              <strong>Secure</strong><span>One vote per pupil<br/>PIN-protected</span>
+            </div>
+            <div class="hero-positions">
+              <span>5 positions</span>
+              <ul>
+                <li>Head Boy</li>
+                <li>Head Girl</li>
+                <li>Assistant Head Boy</li>
+                <li>Assistant Head Girl</li>
+                <li>Games Captain</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="triple">
+        <div class="card mini">
+          <h3>1 · Register</h3>
+          <p class="muted">Enter admission number, name, class &amp; choose a PIN. Admin reviews the application.</p>
+        </div>
+        <div class="card mini">
+          <h3>2 · Get approved</h3>
+          <p class="muted">Admin approves in the dashboard. You receive no email — just try logging in again.</p>
+        </div>
+        <div class="card mini">
+          <h3>3 · Vote once</h3>
+          <p class="muted">Log in with admission + PIN, pick one candidate per position, submit. Permanent.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>Election positions</h2>
+          <span class="badge">5 seats</span>
+        </div>
+        <div class="positions-grid">
+          <div class="pos-card"><strong>School Captain</strong><span>Head Boy</span></div>
+          <div class="pos-card"><strong>School Captain</strong><span>Head Girl</span></div>
+          <div class="pos-card"><strong>Assistant</strong><span>Head Boy</span></div>
+          <div class="pos-card"><strong>Assistant</strong><span>Head Girl</span></div>
+          <div class="pos-card"><strong>Games</strong><span>Captain</span></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button id="landing-cta-register" class="btn primary">Create voter account</button>
+          <button id="landing-cta-login" class="btn">I already have a PIN</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Pupil Login -->
-    <section id="view-login" class="card">
+    <section id="view-login" class="card hidden">
       <h2>Pupil Login</h2>
-      <p class="muted">Enter your admission number and PIN to access your ballot. One vote per pupil.</p>
+      <p class="muted">Enter your admission number and PIN to access your ballot. One vote per pupil. New accounts must be approved first.</p>
       <form id="form-login" class="stack">
         <label>Admission Number
           <input id="login-adm" type="text" placeholder="e.g. KP001" autocomplete="off" required />
@@ -35,10 +105,43 @@
         <button type="submit" class="btn primary">Continue to Ballot →</button>
         <p id="login-error" class="error hidden"></p>
       </form>
+      <div class="row" style="margin-top:10px">
+        <button id="login-to-register" class="btn">Need an account? Register</button>
+      </div>
       <details class="hint">
         <summary>Demo accounts</summary>
-        <p class="muted">All demo pupils: PIN <code>1234</code>. Admissions <code>KP001</code>–<code>KP010</code>. Admin: <code>admin / admin123</code></p>
+        <p class="muted">Demo pupils: PIN <code>1234</code>. Admissions <code>KP001</code>–<code>KP010</code>. Admin: <code>admin / admin123</code></p>
       </details>
+    </section>
+
+    <!-- Registration -->
+    <section id="view-register" class="card hidden">
+      <h2>New Voter Registration</h2>
+      <p class="muted">Your application goes to the admin for approval. Use the PIN you choose here to log in after approval. You can re-apply if rejected.</p>
+      <form id="form-register" class="stack">
+        <label>Admission Number
+          <input id="reg-adm" type="text" placeholder="e.g. KP011" autocomplete="off" required />
+        </label>
+        <label>Full Name
+          <input id="reg-name" type="text" placeholder="e.g. Mercy Chepkirui" required />
+        </label>
+        <label>Class
+          <input id="reg-class" type="text" placeholder="e.g. Grade 5" required />
+        </label>
+        <label>Choose PIN (min 4)
+          <input id="reg-pin" type="password" placeholder="••••" required />
+        </label>
+        <label>Confirm PIN
+          <input id="reg-pin2" type="password" placeholder="••••" required />
+        </label>
+        <button type="submit" class="btn primary">Submit for Approval →</button>
+        <p id="register-error" class="error hidden"></p>
+        <p id="register-ok" class="ok hidden"></p>
+      </form>
+      <div class="row" style="margin-top:10px">
+        <button id="register-to-login" class="btn">Already approved? Log in</button>
+        <button id="register-to-home" class="btn ghost dark">← Back to Home</button>
+      </div>
     </section>
 
     <!-- Ballot -->
@@ -75,33 +178,50 @@
         <button type="submit" class="btn primary">Open Dashboard →</button>
         <p id="admin-error" class="error hidden"></p>
       </form>
-      <button id="btn-admin-back" class="btn ghost">← Back to Pupil Login</button>
+      <button id="btn-admin-back" class="btn ghost dark">← Back to Home</button>
     </section>
 
     <!-- Admin Dashboard -->
     <section id="view-admin" class="hidden">
       <div class="card">
         <div class="section-head">
-          <h2>Admin Dashboard — Live Results</h2>
+          <h2>Admin Dashboard</h2>
           <div class="row">
-            <button id="btn-refresh" class="btn ghost">Refresh</button>
+            <button id="btn-refresh" class="btn ghost dark">Refresh</button>
             <button id="btn-reset" class="btn danger">Reset Election</button>
             <button id="btn-admin-logout" class="btn">Log out</button>
           </div>
         </div>
-        <div class="kpis">
-          <div class="kpi"><span class="kpi-label">Turnout</span><span id="kpi-turnout" class="kpi-value">—</span></div>
-          <div class="kpi"><span class="kpi-label">Voted</span><span id="kpi-voted" class="kpi-value">—</span></div>
-          <div class="kpi"><span class="kpi-label">Registered</span><span id="kpi-total" class="kpi-value">—</span></div>
+        <div class="tabs">
+          <button id="tab-results" class="tab active">Live Results</button>
+          <button id="tab-registrations" class="tab">Registrations <span id="reg-count" class="tab-count hidden">0</span></button>
         </div>
-        <div id="results"></div>
-        <p id="admin-msg" class="muted"></p>
+
+        <div id="admin-panel-results">
+          <div class="kpis">
+            <div class="kpi"><span class="kpi-label">Turnout</span><span id="kpi-turnout" class="kpi-value">—</span></div>
+            <div class="kpi"><span class="kpi-label">Voted</span><span id="kpi-voted" class="kpi-value">—</span></div>
+            <div class="kpi"><span class="kpi-label">Registered</span><span id="kpi-total" class="kpi-value">—</span></div>
+          </div>
+          <div id="results"></div>
+          <p id="admin-msg" class="muted"></p>
+        </div>
+
+        <div id="admin-panel-registrations" class="hidden">
+          <div class="section-head" style="margin-top:6px">
+            <h3 style="margin:0">Pending voter approvals</h3>
+            <button id="btn-reg-refresh" class="btn ghost dark">Refresh</button>
+          </div>
+          <p class="muted">Approve to grant login/voting access. Reject to let the pupil re-apply.</p>
+          <div id="registrations-list"></div>
+          <p id="registrations-msg" class="muted"></p>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Kericho Primary · School of Computing & Information Science — built with Node.js + SQLite · <a href="#" id="footer-admin-link">Admin</a></p>
+    <p>Kericho Primary · School of Computing &amp; Information Science — built with Node.js + SQLite · <a href="#" id="footer-admin-link">Admin</a></p>
   </footer>
 
   <script src="/public/app.js" type="module"></script>

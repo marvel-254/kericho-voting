@@ -40,8 +40,19 @@ function initSchema() {
       VoteCount INTEGER DEFAULT 0,
       FOREIGN KEY (CandidateID) REFERENCES candidates(CandidateID)
     );
+    CREATE TABLE IF NOT EXISTS voter_registrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      AdmissionNumber TEXT NOT NULL UNIQUE,
+      Name TEXT NOT NULL,
+      Class TEXT NOT NULL,
+      PINHash TEXT NOT NULL,
+      Status TEXT NOT NULL DEFAULT 'pending',
+      CreatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+      ReviewedAt TEXT
+    );
     CREATE INDEX IF NOT EXISTS idx_candidates_position ON candidates(Position);
     CREATE INDEX IF NOT EXISTS idx_voters_class ON voters(Class);
+    CREATE INDEX IF NOT EXISTS idx_registrations_status ON voter_registrations(Status);
   `);
 }
 
@@ -60,14 +71,6 @@ function seedIfEmpty() {
     { adm: 'KP008', pin: '1234', name: 'Kevin Kipkorir', class: 'Grade 4' },
     { adm: 'KP009', pin: '1234', name: 'Lydia Chepkorir', class: 'Grade 4' },
     { adm: 'KP010', pin: '1234', name: 'Michael Kipkemboi', class: 'Grade 4' },
-  ];
-
-  const positions = [
-    'School Captain (Head Boy)',
-    'School Captain (Head Girl)',
-    'Assistant Head Boy',
-    'Assistant Head Girl',
-    'Games Captain'
   ];
 
   const candidates = [
@@ -111,11 +114,6 @@ function hashPin(pin) {
 function sendJSON(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
-}
-
-function sendHTML(res, status, html) {
-  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(html);
 }
 
 function serveStatic(res, filepath) {
@@ -228,17 +226,70 @@ const resetElection = () => {
   return { ok: true };
 };
 
+const registerVoter = (body) => {
+  const { admissionNumber, name, class: klass, pin } = body || {};
+  if (!admissionNumber || !name || !klass || !pin) return { ok: false, error: 'All fields are required' };
+  const adm = String(admissionNumber).trim().toUpperCase();
+  const n = String(name).trim();
+  const cls = String(klass).trim();
+  const p = String(pin).trim();
+  if (adm.length < 3 || adm.length > 20) return { ok: false, error: 'Admission number must be 3–20 characters' };
+  if (!/^[A-Z0-9/-]+$/.test(adm)) return { ok: false, error: 'Admission number may only contain letters, numbers, / and -' };
+  if (n.length < 2) return { ok: false, error: 'Name must be at least 2 characters' };
+  if (cls.length < 1) return { ok: false, error: 'Class is required' };
+  if (p.length < 4) return { ok: false, error: 'PIN must be at least 4 characters' };
+  const existingVoter = db.prepare('SELECT AdmissionNumber FROM voters WHERE AdmissionNumber = ?').get(adm);
+  if (existingVoter) return { ok: false, error: 'Admission number already registered and approved' };
+  const existingReg = db.prepare('SELECT id, Status FROM voter_registrations WHERE AdmissionNumber = ?').get(adm);
+  if (existingReg) {
+    if (existingReg.Status === 'pending') return { ok: false, error: 'Application already pending approval' };
+    if (existingReg.Status === 'approved') return { ok: false, error: 'Admission already approved — please log in to vote' };
+    if (existingReg.Status === 'rejected') {
+      db.prepare('DELETE FROM voter_registrations WHERE AdmissionNumber = ?').run(adm);
+    }
+  }
+  const pinHash = hashPin(p);
+  db.prepare('INSERT INTO voter_registrations (AdmissionNumber, Name, Class, PINHash, Status) VALUES (?, ?, ?, ?, \'pending\')').run(adm, n, cls, pinHash);
+  const row = db.prepare('SELECT * FROM voter_registrations WHERE AdmissionNumber = ?').get(adm);
+  return { ok: true, registration: { id: row.id, AdmissionNumber: row.AdmissionNumber, Name: row.Name, Class: row.Class, Status: row.Status } };
+};
+
+const listRegistrations = () => {
+  const rows = db.prepare('SELECT id, AdmissionNumber, Name, Class, Status, CreatedAt, ReviewedAt FROM voter_registrations ORDER BY CASE Status WHEN \'pending\' THEN 0 WHEN \'approved\' THEN 1 ELSE 2 END, CreatedAt DESC').all();
+  return { ok: true, registrations: rows };
+};
+
+const approveRegistration = (id) => {
+  const reg = db.prepare('SELECT * FROM voter_registrations WHERE id = ?').get(id);
+  if (!reg) return { ok: false, error: 'Registration not found' };
+  if (reg.Status !== 'pending') return { ok: false, error: `Already ${reg.Status}` };
+  const exists = db.prepare('SELECT AdmissionNumber FROM voters WHERE AdmissionNumber = ?').get(reg.AdmissionNumber);
+  if (exists) {
+    db.prepare('UPDATE voter_registrations SET Status = \'rejected\', ReviewedAt = datetime(\'now\') WHERE id = ?').run(id);
+    return { ok: false, error: 'Voter already exists' };
+  }
+  db.exec('BEGIN');
+  try {
+    db.prepare('INSERT INTO voters (AdmissionNumber, PINHash, Name, Class, HasVoted) VALUES (?, ?, ?, ?, 0)').run(reg.AdmissionNumber, reg.PINHash, reg.Name, reg.Class);
+    db.prepare('UPDATE voter_registrations SET Status = \'approved\', ReviewedAt = datetime(\'now\') WHERE id = ?').run(id);
+    db.exec('COMMIT');
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch {}
+    return { ok: false, error: 'Failed to approve — ' + e.message };
+  }
+  return { ok: true };
+};
+
+const rejectRegistration = (id) => {
+  const reg = db.prepare('SELECT * FROM voter_registrations WHERE id = ?').get(id);
+  if (!reg) return { ok: false, error: 'Registration not found' };
+  if (reg.Status !== 'pending') return { ok: false, error: `Already ${reg.Status}` };
+  db.prepare('UPDATE voter_registrations SET Status = \'rejected\', ReviewedAt = datetime(\'now\') WHERE id = ?').run(id);
+  return { ok: true };
+};
+
 initSchema();
 seedIfEmpty();
-
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-};
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -267,6 +318,20 @@ const server = http.createServer((req, res) => {
         sendJSON(res, 200, submitVote(data));
       } catch {
         sendJSON(res, 400, { ok: false, error: 'Invalid JSON' });
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/register') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        sendJSON(res, 200, registerVoter(data));
+      } catch (e) {
+        sendJSON(res, 500, { ok: false, error: e.message });
       }
     });
     return;
@@ -301,6 +366,37 @@ const server = http.createServer((req, res) => {
       return;
     }
     sendJSON(res, 200, resetElection());
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/admin/registrations') {
+    if (!isAdminAuthorized(req)) {
+      sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' });
+      return;
+    }
+    sendJSON(res, 200, listRegistrations());
+    return;
+  }
+
+  const approveMatch = pathname.match(/^\/api\/admin\/registrations\/(\d+)\/approve$/);
+  if (req.method === 'POST' && approveMatch) {
+    if (!isAdminAuthorized(req)) {
+      sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' });
+      return;
+    }
+    const id = Number(approveMatch[1]);
+    sendJSON(res, 200, approveRegistration(id));
+    return;
+  }
+
+  const rejectMatch = pathname.match(/^\/api\/admin\/registrations\/(\d+)\/reject$/);
+  if (req.method === 'POST' && rejectMatch) {
+    if (!isAdminAuthorized(req)) {
+      sendJSON(res, 401, { ok: false, error: 'Unauthorized — admin login required' });
+      return;
+    }
+    const id = Number(rejectMatch[1]);
+    sendJSON(res, 200, rejectRegistration(id));
     return;
   }
 
