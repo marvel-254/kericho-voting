@@ -411,6 +411,7 @@
           <button id="tab-fraud" class="tab">Fraud Reports <span id="fraud-count" class="tab-count hidden">0</span></button>
           <button id="tab-contacts" class="tab">Messages <span id="contact-count" class="tab-count hidden">0</span></button>
           <button id="tab-guide" class="tab">System Guide</button>
+          <button id="tab-settings" class="tab">Settings</button>
         </div>
 
         <div id="admin-panel-results">
@@ -454,7 +455,6 @@
           <div id="contacts-list"></div>
           <p id="contacts-msg" class="muted"></p>
         </div>
-
         <div id="admin-panel-guide" class="hidden">
           <div class="guide" id="printable-guide">
             <h2 style="margin:0">Kericho Primary — Online Voting: How the whole thing works</h2>
@@ -482,9 +482,35 @@
             <h3>6. Running locally</h3>
             <p class="muted"><code>node server.js</code> → <code>http://localhost:3000</code>. Tests: <code>BASE_URL=http://localhost:3000 node test/smoke.mjs</code> (or against <code>https://kericho-voting.onrender.com</code>).</p>
             <h3>7. Deploy &amp; CI</h3>
-            <p class="muted">GitHub <code>marvel-254/kericho-voting</code> <code>main</code> → Render <code>kericho-voting</code> (Oregon, free, <code>autoDeploy: yes</code>). CI: <code>.github/workflows/ci.yml</code> runs <code>node --check</code> + smoke on push/PR.</p>
+            <p class="muted">GitHub <code>marvel-254/kericho-voting</code> <code>main</code> → Render <code>kericho-voting</code> (Oregon, free, <code>autoDeploy: yes</code>). CI: <code>.github/workflows/ci.yml</code> runs <code>node --check</code> + smoke on push/PR. Full cookbook: see <em>COOKBOOK.pdf</em> in Settings.</p>
             <p class="muted small">Built for clarity and fairness — keep the teacher’s admin credentials safe.</p>
           </div>
+        </div>
+
+        <div id="admin-panel-settings" class="hidden">
+          <h3 style="margin:0">Settings — Codebase</h3>
+          <p class="muted">Safe, credential-free downloads hosted on GitHub Releases. No <code>voting.db</code>, no tokens, no <code>.env</code> — just source.</p>
+          <div class="bento" style="margin-top:12px">
+            <div class="bento-tile span-6 card brutal" style="margin:0">
+              <h3 style="margin:0 0 6px">Codebase ZIP</h3>
+              <p class="muted small"><code>kericho-voting-codebase.zip</code> — server, client, tests, CI, cookbook (35 KB). Built from <code>main</code>.</p>
+              <div class="row" style="margin-top:10px">
+                <a id="dl-zip" class="btn primary" href="https://github.com/marvel-254/kericho-voting/releases/download/codebase-v1.1.0/kericho-voting-codebase.zip" download>Download ZIP →</a>
+                <a class="btn ghost dark" href="https://github.com/marvel-254/kericho-voting/releases/tag/codebase-v1.1.0" target="_blank" rel="noopener">View release</a>
+              </div>
+              <p class="muted small" style="margin-top:8px">SHA-256 checked — safe to share with the class or examiners.</p>
+            </div>
+            <div class="bento-tile span-6 card brutal" style="margin:0">
+              <h3 style="margin:0 0 6px">Cookbook — How to run locally</h3>
+              <p class="muted small"><code>COOKBOOK.pdf</code> — specs, <code>node server.js</code> on <code>localhost:3000</code>, API reference, DB schema. Printable.</p>
+              <div class="row" style="margin-top:10px">
+                <a id="dl-cookbook" class="btn primary" href="https://github.com/marvel-254/kericho-voting/releases/download/codebase-v1.1.0/COOKBOOK.pdf" download>Download Cookbook PDF →</a>
+                <a class="btn ghost dark" href="https://github.com/marvel-254/kericho-voting/blob/main/COOKBOOK.md" target="_blank" rel="noopener">Read on GitHub</a>
+              </div>
+              <p class="muted small" style="margin-top:8px">Includes Troubleshooting and full API/spec tables.</p>
+            </div>
+          </div>
+          <p class="muted small" style="margin-top:10px">Links point to <code>codebase-v1.1.0</code> on GitHub — always verify the tag matches the current <code>main</code>.</p>
         </div>
       </div>
     </section>

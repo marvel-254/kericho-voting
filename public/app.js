@@ -245,7 +245,7 @@ async function loadContacts() {
 }
 
 function showAdminTab(which) {
-  const tabs = ['results','registrations','fraud','contacts','guide'];
+  const tabs = ['results','registrations','fraud','contacts','guide','settings'];
   for (const t of tabs) {
     document.getElementById(`tab-${t}`)?.classList.toggle('active', t===which);
     document.getElementById(`admin-panel-${t}`)?.classList.toggle('hidden', t!==which);
@@ -303,6 +303,7 @@ document.getElementById('tab-registrations')?.addEventListener('click', () => sh
 document.getElementById('tab-fraud')?.addEventListener('click', () => showAdminTab('fraud'));
 document.getElementById('tab-contacts')?.addEventListener('click', () => showAdminTab('contacts'));
 document.getElementById('tab-guide')?.addEventListener('click', () => showAdminTab('guide'));
+document.getElementById('tab-settings')?.addEventListener('click', () => showAdminTab('settings'));
 document.getElementById('btn-refresh')?.addEventListener('click', () => { play('tap'); renderResults(); });
 document.getElementById('btn-reg-refresh')?.addEventListener('click', () => { play('tap'); loadRegistrations(); });
 document.getElementById('btn-fraud-refresh')?.addEventListener('click', () => { play('tap'); loadFraud(); });
